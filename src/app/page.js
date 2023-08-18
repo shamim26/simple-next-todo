@@ -3,10 +3,10 @@ import TodoList from "@/components/TodoList";
 import { useState } from "react";
 
 export default function Home() {
-  const todos = JSON.parse(localStorage.getItem("to-do"));
+  const isBrowser = typeof window !== "undefined";
+  const todos = isBrowser ? JSON.parse(localStorage.getItem("to-do")) : [];
   const [input, setInput] = useState("");
   const [todoItem, setTodoItem] = useState(todos || []);
-
 
   // add new to do
   const addTodo = (e) => {
