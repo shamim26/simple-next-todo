@@ -1,8 +1,56 @@
+import { deleteTodo, updateStatus } from "@/api/todo";
+import { db } from "@/firebase.config";
+import useAuth from "@/hooks/useAuth";
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-export default function TodoList({ todos, deleteTodo, markTodo }) {
+export default function TodoList() {
+  const { user } = useAuth();
+  const [todos, setTodos] = useState([]);
+
+  const refreshData = () => {
+    if (!user) {
+      setTodos([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "to-do"),
+      where("user", "==", user?.uid),
+      orderBy("createdAt", 'desc')
+    );
+    onSnapshot(q, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setTodos(list);
+    });
+  };
+  useEffect(() => {
+    refreshData();
+  }, [user]);
+
+  const markTodo = (id) => {
+    const updated = todos.map(async (todo) => {
+      if (todo.id === id) {
+        await updateStatus(id, { done: !todo.done });
+      }
+    });
+  };
+
+  const removeTodo = async (id) => {
+    await deleteTodo(id);
+  };
+
   return (
-    <div className="w-2/4 mx-auto my-10">
+    <div className="w-4/5 md:w-2/4 mx-auto my-10 text-black">
       <div className="flex flex-col gap-5">
         {todos?.map((todo) => (
           <div key={todo?.id} className="to-do-items">
@@ -14,7 +62,10 @@ export default function TodoList({ todos, deleteTodo, markTodo }) {
             >
               {todo.text}
             </p>
-            <span className="cursor-pointer" onClick={() => deleteTodo(todo?.id)}>
+            <span
+              className="cursor-pointer"
+              onClick={() => removeTodo(todo?.id)}
+            >
               {" "}
               <svg
                 fill="none"
